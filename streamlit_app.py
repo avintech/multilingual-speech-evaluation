@@ -1,19 +1,11 @@
-#import audio_augmentation
-from datasets import load_dataset
 import joblib
 from joblib import dump, load
-import os
+print(f"joblib: {joblib.__version__}")
 import pandas as pd
+print(f"pandas: {pd.__version__}")
 import prepare_data
-from scipy.stats import pearsonr
-import shutil
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, mean_squared_error
-from sklearn.model_selection import GridSearchCV,train_test_split
-from sklearn.preprocessing import MinMaxScaler
 import streamlit as st
 from streamlit_mic_recorder import mic_recorder,speech_to_text
-import torch
-import xgboost as xgb
 
 # Page configuration
 st.set_page_config(page_title="Speech Evaluation")
@@ -33,21 +25,51 @@ if selection == "Picture Discussion":
 elif selection == "Reading":
     st.title("Reading Task")
     st.write("Please read the below text to the best of your ability.")
-    provided_text = "Opera refers to a dramatic art form, originating in Europe, in which the emotional content is conveyed to the audience as much through music, both vocal and instrumental, as it is through the lyrics. By contrast, in musical theater an actor's dramatic performance is primary, and the music plays a lesser role. The drama in opera is presented using the primary elements of theater such as scenery, costumes, and acting. However, the words of the opera, or libretto, are sung rather than spoken. The singers are accompanied by a musical ensemble ranging from a small instrumental ensemble to a full symphonic orchestra."
+    provided_text = "Opera refers to a dramatic art form, originating in Europe."
     with st.container():
         st.write(provided_text)
      
 def callback():
     if st.session_state.my_recorder_output:
         audio_bytes=st.session_state.my_recorder_output['bytes']
-        with open('myfile2.wav', mode='bx') as f:
+        with open('myfile2.wav', mode='wb') as f:
             f.write(audio_bytes)
         st.audio(audio_bytes)
         data = prepare_data.load_audio(provided_text,'myfile2.wav')
         
         #use previous scaler to scale the new prediction to fit into the model
         data = pd.DataFrame([data])
-        data = data.drop(columns=['wav_file_path'])
+        real_and_transcribed_words_ipa = data['real_and_transcribed_words_ipa'].values[0]
+        data = data.drop(columns=['wav_file_path','real_and_transcribed_words_ipa'])
+
+        #####
+        def generate_comparison_paragraph(pairs):
+            actual_text = " ".join([pair[0] for pair in pairs])
+            spoken_text = " ".join([pair[1] for pair in pairs])
+            
+            # Initialize an empty string for the comparison
+            comparison_text = ""
+            for actual, spoken in pairs:
+                if actual != spoken:
+                    comparison_text += f"<u>{actual}</u> "  # Underline mismatches
+                else:
+                    comparison_text += actual + " "  # No underline for matches
+            
+            return actual_text, spoken_text, comparison_text
+
+        # Generate the texts
+        actual_text, spoken_text, comparison_text = generate_comparison_paragraph(real_and_transcribed_words_ipa)
+
+        # Display the paragraphs in Streamlit
+        st.markdown("### Actual Text")
+        st.markdown(actual_text, unsafe_allow_html=True)
+
+        st.markdown("### Spoken Text")
+        st.markdown(spoken_text, unsafe_allow_html=True)
+
+        st.markdown("### Comparison (with underlines for mismatches)")
+        st.markdown(comparison_text, unsafe_allow_html=True)
+       
         scaler = joblib.load('my_scaler.joblib')
         new_data_normalized = scaler.transform(data)
 
@@ -55,6 +77,11 @@ def callback():
         loaded_model = load('grid_search_model.joblib')
         # Use the loaded model
         predictions = loaded_model.predict(new_data_normalized) # Assuming you have an X_test set
-        
-        print(predictions)
+        data.at[0,'predicted_fluency'] = predictions
+        data.columns = ['Words per second','Pause Rate (%)','Pronunciation Accuracy (%)','Fluency']
+        html = data.to_html(index=False)
+        st.title('Scores:')
+        # Use markdown to display the table without index
+        st.markdown(html, unsafe_allow_html=True)
+
 mic_recorder(key='my_recorder', callback=callback)

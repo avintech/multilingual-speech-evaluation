@@ -1,2 +1,12 @@
 streamlit
 streamlit-mic-recorder
+joblib==1.3.2
+pandas==2.2.1
+eng_to_ipa==0.0.2
+parselmouth==0.4.3
+pydub==0.25.1
+scipy==1.12.0
+whisper_timestamped==1.15.3
+numpy==1.26.4
+ortools==9.9.3963
+dtwalign==0.1.1

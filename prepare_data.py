@@ -1,12 +1,16 @@
 import eng_to_ipa
+print(f"eng_to_ipa: 0.0.2")
 import numpy as np
 import os
 import parselmouth
+print(f"parselmouth: {parselmouth.__version__}")
 from pydub import AudioSegment
+print(f"pydub: 0.25.1")
 import scipy.signal
+print(f"scipy: {scipy.__version__}")
 from string import punctuation
-import whisperx
 import whisper_timestamped as whispert
+print(f"whisper_timestamped: 1.15.3")
 import WordMatching
 import WordMetrics
 import zaf
@@ -69,6 +73,7 @@ def load_audio(provided_text,audio_path):
             'speech_rate': speech_rate,
             'pause_rate': pause_rate,
             'pronunciation_accuracy': pronunciation_accuracy,
+            'real_and_transcribed_words_ipa': real_and_transcribed_words_ipa,
             #'mfcc': mfcc,
             #'mean_pitch': mean_pitch,
             #'pitch_range': pitch_range,

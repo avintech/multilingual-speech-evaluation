@@ -1,8 +1,10 @@
 import WordMetrics
 from ortools.sat.python import cp_model
+print(f"ortools: 9.9.3963")
 import numpy as np
 from string import punctuation
 from dtwalign import dtw_from_distance_matrix
+print(f"dtwalign: 0.1.1")
 import time
 
 offset_blank = 1
