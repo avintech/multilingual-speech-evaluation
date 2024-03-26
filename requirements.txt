@@ -12,3 +12,5 @@ ortools==9.9.3963
 dtwalign==0.1.1
 scikit-learn
 xgboost
+ffmpeg-python
+pydub
