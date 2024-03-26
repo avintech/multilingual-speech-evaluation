@@ -10,3 +10,4 @@ whisper-timestamped==1.15.3
 numpy==1.26.4
 ortools==9.9.3963
 dtwalign==0.1.1
+scikit-learn
