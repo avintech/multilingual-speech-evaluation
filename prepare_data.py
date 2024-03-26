@@ -20,6 +20,7 @@ def load_audio(provided_text,audio_path):
         speech_rate = 0
         pause_rate = 0
         pronunciation_accuracy = 0
+        real_and_transcribed_words_ipa = []
         
         #convert mp3 to wav
         root, ext = os.path.splitext(audio_path)
