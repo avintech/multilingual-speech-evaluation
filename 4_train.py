@@ -36,10 +36,7 @@ try:
     rf = RandomForestClassifier(n_estimators=50, oob_score=True, random_state=0)
     param_grid = {
         'n_estimators': [100, 200, 300],
-        'learning_rate': [0.01, 0.1, 0.2, 0.0001],
-        'max_depth': [4, 6, 8],
-        'colsample_bytree': [0.3, 0.7, 1.0],
-        'subsample': [0.6, 0.8, 1.0]
+        'max_depth': [4, 6, 8]
     }
 
     rf_grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=3, scoring='accuracy', verbose=2, n_jobs=-1)

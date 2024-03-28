@@ -58,8 +58,5 @@ test_df = pd.DataFrame(test_data)
 test_df['audio_path'] = 'data/recordings/SPEAKER' + test_df['speaker'] + '-' + test_df['audio_path'].str.replace(r'\.wav$', '.WAV', case=False, regex=True)
 test_df = test_df.drop(columns=['speaker'])
 
-train_df
-test_df
-
 train_df.to_pickle("data/pickles/train.pkl")
 test_df.to_pickle("data/pickles/test.pkl")

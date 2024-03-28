@@ -17,27 +17,29 @@ else:
     new_data = pd.read_pickle("data/pickles/test.pkl")
     for index, row in new_data.iterrows():
         try:
-            data = prepare_data.load_audio(row['text'],row['audio_path'])
-            #new_data.at[index,'wav_file_path'] = data['wav_file_path']
-            new_data.at[index,'pronunciation_accuracy'] = data['pronunciation_accuracy']
-            new_data.at[index,'speech_rate'] = data['speech_rate']
-            new_data.at[index,'pause_rate'] = data['pause_rate']
-            #new_data.at[index,'mfcc'] = data['mfcc']
-            #new_data.at[index,'mean_pitch'] = data['mean_pitch']
-            #new_data.at[index,'pitch_range'] = data['pitch_range']
-            #new_data.at[index,'std_pitch'] = data['std_pitch']
-            new_data_norm = pd.DataFrame([data])
-            new_data_norm = new_data_norm.drop(columns=['wav_file_path'])
-            new_data_normalized = scaler.transform(new_data_norm)
-            new_data.at[index,'gs_predicted_fluency'] = xgboost_model.predict(new_data_normalized)
-            new_data.at[index,'rf_predicted_fluency'] = random_forest_model.predict(new_data_normalized)
+            if os.path.exists(row['audio_path']):
+                data = prepare_data.load_audio(row['text'],row['audio_path'])
+                #new_data.at[index,'wav_file_path'] = data['wav_file_path']
+                new_data.at[index,'pronunciation_accuracy'] = data['pronunciation_accuracy']
+                new_data.at[index,'speech_rate'] = data['speech_rate']
+                new_data.at[index,'pause_rate'] = data['pause_rate']
+                #new_data.at[index,'mfcc'] = data['mfcc']
+                #new_data.at[index,'mean_pitch'] = data['mean_pitch']
+                #new_data.at[index,'pitch_range'] = data['pitch_range']
+                #new_data.at[index,'std_pitch'] = data['std_pitch']
+                new_data_norm = pd.DataFrame([data])
+                new_data_norm = new_data_norm.drop(columns=['wav_file_path','real_and_transcribed_words_ipa'])
+                new_data_norm.reset_index(drop=True, inplace=True)
+                new_data_normalized = scaler.transform(new_data_norm)
+                new_data.at[index,'gs_predicted_fluency'] = xgboost_model.predict(new_data_normalized)
+                new_data.at[index,'rf_predicted_fluency'] = random_forest_model.predict(new_data_normalized)
+            else:
+                new_data = new_data.drop(index=index)
+            
         except Exception as ex:
             print(row['audio_path'])
             print(ex)
-        finally:
-            print(new_data.iloc[index])
-            print("-" * 20)
-
+            
     def map_fluency(value):
         if 0 <= value <= 3:
             return 0
