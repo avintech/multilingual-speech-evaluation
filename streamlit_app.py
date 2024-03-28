@@ -1,7 +1,7 @@
 import joblib
 from joblib import load
 import pandas as pd
-import prepare_data
+import modules.prepare_data as prepare_data
 import streamlit as st
 from streamlit_mic_recorder import mic_recorder
 
@@ -69,11 +69,11 @@ def callback():
             st.markdown("### Comparison (with underlines for mismatches)")
             st.markdown(comparison_text, unsafe_allow_html=True)
         
-            scaler = joblib.load('my_scaler.joblib')
+            scaler = joblib.load('models/scaler.joblib')
             new_data_normalized = scaler.transform(data)
 
             # Load the model from the file
-            loaded_model = load('grid_search_model.joblib')
+            loaded_model = load('models/grid_search_model.joblib')
             # Use the loaded model
             predictions = loaded_model.predict(new_data_normalized) # Assuming you have an X_test set
             data.at[0,'predicted_fluency'] = predictions

@@ -1,5 +1,4 @@
 import numpy as np
-print(f"numpy: {np.__version__}")
 
 # ref from https://gitlab.com/-/snippets/1948157
 # For some variants, look here https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python

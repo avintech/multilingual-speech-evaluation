@@ -1,19 +1,14 @@
 import eng_to_ipa
-print(f"eng_to_ipa: 0.0.2")
 import numpy as np
 import os
 import parselmouth
-print(f"parselmouth: {parselmouth.__version__}")
 from pydub import AudioSegment
-print(f"pydub: 0.25.1")
 import scipy.signal
-print(f"scipy: {scipy.__version__}")
 from string import punctuation
 import whisper_timestamped as whispert
-print(f"whisper_timestamped: 1.15.3")
-import WordMatching
-import WordMetrics
-import zaf
+from .WordMatching import *
+from .WordMetrics import *
+from .zaf import *
 
 def load_audio(provided_text,audio_path):
     try:
@@ -91,7 +86,7 @@ def matchWords(provided_text, recorded_transcript):
     words_estimated = recorded_transcript.split()
     words_real = provided_text.split()
 
-    mapped_words, mapped_words_indices = WordMatching.get_best_mapped_words(
+    mapped_words, mapped_words_indices = get_best_mapped_words(
         words_estimated, words_real)
 
     real_and_transcribed_words = []
@@ -114,7 +109,7 @@ def getPronunciationAccuracy(real_and_transcribed_words_ipa) -> float:
     current_words_pronunciation_accuracy = []
     for pair in real_and_transcribed_words_ipa:
         real_without_punctuation = removePunctuation(pair[0]).lower()
-        number_of_word_mismatches = WordMetrics.edit_distance_python(
+        number_of_word_mismatches = edit_distance_python(
             real_without_punctuation, removePunctuation(pair[1]).lower())
         total_mismatches += number_of_word_mismatches
         number_of_phonemes_in_word = len(real_without_punctuation)
@@ -155,7 +150,7 @@ def get_pitch(audio_path):
     return mean_pitch,pitch_range,std_pitch
 
 def get_mfcc(audio_path):
-    audio_signal, sampling_frequency = zaf.wavread(audio_path)
+    audio_signal, sampling_frequency = wavread(audio_path)
 
     # Check if audio_signal is multi-channel and average it over its channels if so
     if audio_signal.ndim > 1:
@@ -168,11 +163,11 @@ def get_mfcc(audio_path):
 
     # Compute the mel filterbank
     number_mels = 40
-    mel_filterbank = zaf.melfilterbank(sampling_frequency, window_length, number_mels)
+    mel_filterbank = melfilterbank(sampling_frequency, window_length, number_mels)
 
     # Compute the MFCCs using the filterbank
     number_coefficients = 20
-    audio_mfcc = zaf.mfcc(audio_signal, window_function, step_length, mel_filterbank, number_coefficients)
+    audio_mfcc = mfcc(audio_signal, window_function, step_length, mel_filterbank, number_coefficients)
 
     # Assuming 'mfcc' is your array of MFCC features
     mfcc_mean = np.mean(audio_mfcc, axis=1)
