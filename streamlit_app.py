@@ -39,6 +39,7 @@ def callback():
             #use previous scaler to scale the new prediction to fit into the model
             data = pd.DataFrame([data])
             real_and_transcribed_words_ipa = data['real_and_transcribed_words_ipa'].values[0]
+            real_and_transcribed_words = data['real_and_transcribed_words'].values[0]
             data = data.drop(columns=['wav_file_path','real_and_transcribed_words_ipa'])
 
             #####
@@ -60,13 +61,26 @@ def callback():
             actual_text, spoken_text, comparison_text = generate_comparison_paragraph(real_and_transcribed_words_ipa)
 
             # Display the paragraphs in Streamlit
+            st.markdown("### Actual Phoneme")
+            st.markdown(actual_text, unsafe_allow_html=True)
+
+            st.markdown("### Spoken Phoneme")
+            st.markdown(spoken_text, unsafe_allow_html=True)
+
+            st.markdown("### Comparison of Phonemes (with underlines for mismatches)")
+            st.markdown(comparison_text, unsafe_allow_html=True)
+
+            # Generate the texts
+            actual_text, spoken_text, comparison_text = generate_comparison_paragraph(real_and_transcribed_words)
+
+            # Display the paragraphs in Streamlit
             st.markdown("### Actual Text")
             st.markdown(actual_text, unsafe_allow_html=True)
 
             st.markdown("### Spoken Text")
             st.markdown(spoken_text, unsafe_allow_html=True)
 
-            st.markdown("### Comparison (with underlines for mismatches)")
+            st.markdown("### Comparison of Text (with underlines for mismatches)")
             st.markdown(comparison_text, unsafe_allow_html=True)
         
             scaler = joblib.load('models/scaler.joblib')

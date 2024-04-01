@@ -65,6 +65,7 @@ def load_audio(provided_text,audio_path):
     
     finally:
         data = {
+            'real_and_transcribed_words': real_and_transcribed_words,
             'wav_file_path': audio_path,
             'speech_rate': speech_rate,
             'pause_rate': pause_rate,
