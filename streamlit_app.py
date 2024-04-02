@@ -23,7 +23,7 @@ if selection == "Picture Discussion":
 elif selection == "Reading":
     st.title("Reading Task")
     st.write("Please read the below text to the best of your ability.")
-    provided_text = "Opera refers to a dramatic art form, originating in Europe."
+    provided_text = "Please call Stella.  Ask her to bring these things with her from the store:  Six spoons of fresh snow peas, five thick slabs of blue cheese, and maybe a snack for her brother Bob."
     with st.container():
         st.write(provided_text)
      
