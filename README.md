@@ -1,6 +1,5 @@
 # multilingual-speech-evaluation
 
 ```sh
-pip install streamlit
-pip install streamlit-mic-recorder
+pip install streamlit streamlit-mic-recorder
 ```
