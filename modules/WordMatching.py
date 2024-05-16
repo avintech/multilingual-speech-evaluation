@@ -1,4 +1,5 @@
-from .WordMetrics import *
+from modules.WordMetrics import edit_distance_python
+
 from ortools.sat.python import cp_model
 import numpy as np
 from string import punctuation

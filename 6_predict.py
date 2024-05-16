@@ -11,6 +11,7 @@ def main():
     # Add arguments
     parser.add_argument('--model', type=str, help='Choose model: 0 for XGBoost, 1 for Random Forest', required=True)
 
+    parser.add_argument('--lang', type=str, help='Choose 1: malay, chinese, tamil', required=True)
     #provided text for new prediction audio
     text_file = "data/reading-passage.txt"
     with open(text_file, 'r') as file:

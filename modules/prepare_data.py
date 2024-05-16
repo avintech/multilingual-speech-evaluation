@@ -1,35 +1,52 @@
 import eng_to_ipa
 import numpy as np
-import os
 import parselmouth
-from pydub import AudioSegment
 import scipy.signal
 from string import punctuation
 import whisper_timestamped as whispert
-from .WordMatching import *
-from .WordMetrics import *
-from .zaf import *
 
-def load_audio(provided_text,audio_path):
+from modules.WordMatching import get_best_mapped_words
+from modules.WordMetrics import edit_distance_python
+from modules.zaf import wavread,melfilterbank,mfcc
+
+from dragonmapper import hanzi
+import dragonmapper
+import torch
+import torchaudio
+import epitran
+            
+
+def load_audio(language,provided_text,audio_path):
     try:
         speech_rate = 0
         pause_rate = 0
         pronunciation_accuracy = 0
         real_and_transcribed_words_ipa = []
         
-        #convert mp3 to wav
-        root, ext = os.path.splitext(audio_path)
-        if ext == ".mp3":
-            sound = AudioSegment.from_mp3(audio_path)
-            sound.export(audio_path.replace('mp3','wav'), format="wav")
-            audio_path = audio_path.replace('mp3','wav')
-        
-        #get transcription
-        audio = whispert.load_audio(audio_path)
-        model = whispert.load_model("base")
-        result = whispert.transcribe(model, audio, language='en', detect_disfluencies=True)
-        recorded_audio_text = result["text"]
+        audio_data = audio_path['array']
+        sample_rate = audio_path['sampling_rate']
 
+        if sample_rate != 16000:
+            audio_tensor = torch.tensor(audio_data, dtype=torch.float32)
+            audio_tensor = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(audio_tensor)
+        else:
+            audio_tensor = torch.tensor(audio_data, dtype=torch.float32)
+
+        audio_np = audio_tensor.numpy()
+
+        audio_np = whispert.pad_or_trim(audio_np)
+
+        match language:
+            case "zh":
+                model = "avintech/whisper-small-chinese"
+            case "ms":
+                model = "avintech/whisper-small-malay"
+            case "ta":
+                model = "avintech/whisper-small-tamil"
+            case _:
+                model = whispert.load_model("base")
+        result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True)
+        recorded_audio_text = result["text"]
         words_list = []
         pause_list = []
         for segment in result["segments"]:
@@ -40,10 +57,8 @@ def load_audio(provided_text,audio_path):
                 else:
                     #get pauses
                     pause_list.append(words)
-
         #compute pronunciation accuracy
-        real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices = matchWords(provided_text, recorded_audio_text)
-        print(real_and_transcribed_words_ipa)
+        real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices = matchWords(language,provided_text, recorded_audio_text)
         pronunciation_accuracy, current_words_pronunciation_accuracy = getPronunciationAccuracy(real_and_transcribed_words_ipa)
 
         #compute speech rate
@@ -78,13 +93,26 @@ def load_audio(provided_text,audio_path):
         }
         return data
 
-def matchWords(provided_text, recorded_transcript):
-    def convertToPhonem(sentence: str) -> str:
-        phonem_representation = eng_to_ipa.convert(sentence)
+def matchWords(language,provided_text, recorded_transcript):
+    #recorded_transcript = recorded_transcript.replace(" ","")
+    def convertToPhonem(language: str ,sentence: str) -> str:
+        match language:
+            case "zh":
+                phonem_representation = dragonmapper.hanzi.to_pinyin(sentence)
+                phonem_representation = dragonmapper.transcriptions.pinyin_to_ipa(phonem_representation)
+            case "ms":
+                epi = epitran.Epitran('msa-Latn')  # Replace 'lang_code' with the ISO language code of the language you're interested in
+                phonem_representation = epi.transliterate(sentence)
+            case "ta":
+                epi = epitran.Epitran('tam-Taml')
+                phonem_representation = epi.transliterate(sentence)
+            case _:
+                phonem_representation = eng_to_ipa.convert(sentence)   
         phonem_representation = phonem_representation.replace('*','')
         return phonem_representation
     
     words_estimated = recorded_transcript.split()
+    print(words_estimated)
     words_real = provided_text.split()
 
     mapped_words, mapped_words_indices = get_best_mapped_words(
@@ -97,8 +125,8 @@ def matchWords(provided_text, recorded_transcript):
             mapped_words.append('-')
         real_and_transcribed_words.append(
             (words_real[word_idx],    mapped_words[word_idx]))
-        real_and_transcribed_words_ipa.append((convertToPhonem(words_real[word_idx]),
-                                            convertToPhonem(mapped_words[word_idx])))
+        real_and_transcribed_words_ipa.append((convertToPhonem(language, words_real[word_idx]),
+                                            convertToPhonem(language, mapped_words[word_idx])))
     return real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices
 
 def getPronunciationAccuracy(real_and_transcribed_words_ipa) -> float:
