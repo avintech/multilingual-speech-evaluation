@@ -18,17 +18,14 @@ def pre_process(language):
                 dataset_path = "avintech/tamil_children_speech"
                 whisper_lang = "ta"
                 
-        common_voice = DatasetDict()
-        common_voice["train"] = load_dataset(dataset_path, split="train", use_auth_token=True)
-        common_voice["test"] = load_dataset(dataset_path, split="test", use_auth_token=True)
-        common_voice_combine = concatenate_datasets([common_voice['train'], common_voice['test']])
-        df = pd.DataFrame(common_voice_combine)
+        common_voice = load_dataset(dataset_path, split="train", use_auth_token=True)
+        df = pd.DataFrame(common_voice)
         #Do for training data
         for index, row in df.iterrows():
             try:
             
                 print("processing audio......")
-                data = load_audio(whisper_lang,df.at[index, 'original_script'],common_voice_combine[index]['audio_path'])
+                data = load_audio(whisper_lang,df.at[index, 'original_script'],common_voice[index]['audio_path'])
                 print("processing audio completed!")
                 df.at[index,'pronunciation_accuracy'] = data['pronunciation_accuracy']
                 df.at[index,'speech_rate'] = data['speech_rate']
