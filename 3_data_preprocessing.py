@@ -30,7 +30,7 @@ def pre_process(language):
                 df.at[index,'pronunciation_accuracy'] = data['pronunciation_accuracy']
                 df.at[index,'speech_rate'] = data['speech_rate']
                 df.at[index,'pause_rate'] = data['pause_rate']
-                #df.at[index,'mfcc'] = data['mfcc']
+                df.at[index,'mfcc'] = data['mfcc']
                 #df.at[index,'mean_pitch'] = data['mean_pitch']
                 #df.at[index,'pitch_range'] = data['pitch_range']
                 #df.at[index,'std_pitch'] = data['std_pitch']

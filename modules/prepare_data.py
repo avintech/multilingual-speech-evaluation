@@ -14,6 +14,8 @@ import dragonmapper
 import torch
 import torchaudio
 import epitran
+import librosa
+from sklearn.preprocessing import StandardScaler
             
 
 def load_audio(language,provided_text,audio_path):
@@ -68,13 +70,8 @@ def load_audio(language,provided_text,audio_path):
         #compute pause rate
         pause_rate = get_pause_rate(pause_list,total_duration)
 
-        # #compute pitch
-        # mean_pitch , pitch_range, std_pitch = get_pitch(audio_path)
-        
-        # #compute MFCC
-        # mfcc_mean, mfcc_std, mfcc_min, mfcc_max = get_mfcc(audio_path)
-        # # Combine these into a single feature vector
-        # mfcc = np.concatenate([mfcc_mean, mfcc_std, mfcc_min, mfcc_max])
+        #compute MFCC
+        mfcc = get_mfcc(audio_data, sample_rate,result['segments'])
     except Exception as ex:
         print(ex)
     
@@ -86,7 +83,7 @@ def load_audio(language,provided_text,audio_path):
             'pause_rate': pause_rate,
             'pronunciation_accuracy': pronunciation_accuracy,
             'real_and_transcribed_words_ipa': real_and_transcribed_words_ipa,
-            #'mfcc': mfcc,
+            'mfcc': mfcc,
             #'mean_pitch': mean_pitch,
             #'pitch_range': pitch_range,
             #'std_pitch': std_pitch,
@@ -178,30 +175,47 @@ def get_pitch(audio_path):
 
     return mean_pitch,pitch_range,std_pitch
 
-def get_mfcc(audio_path):
-    audio_signal, sampling_frequency = wavread(audio_path)
-
-    # Check if audio_signal is multi-channel and average it over its channels if so
-    if audio_signal.ndim > 1:
-        audio_signal = np.mean(audio_signal, axis=1)
-
-    # Set the parameters for the Fourier analysis
-    window_length = pow(2, int(np.ceil(np.log2(0.04 * sampling_frequency))))
-    window_function = scipy.signal.hamming(window_length, sym=False)
-    step_length = int(window_length / 2)
-
-    # Compute the mel filterbank
-    number_mels = 40
-    mel_filterbank = melfilterbank(sampling_frequency, window_length, number_mels)
-
-    # Compute the MFCCs using the filterbank
-    number_coefficients = 20
-    audio_mfcc = mfcc(audio_signal, window_function, step_length, mel_filterbank, number_coefficients)
-
-    # Assuming 'mfcc' is your array of MFCC features
-    mfcc_mean = np.mean(audio_mfcc, axis=1)
-    mfcc_std = np.std(audio_mfcc, axis=1)
-    mfcc_min = np.min(audio_mfcc, axis=1)
-    mfcc_max = np.max(audio_mfcc, axis=1)
+def get_mfcc(y, sr, segments):
     
-    return mfcc_mean, mfcc_std, mfcc_min, mfcc_max
+    # Function to extract MFCC features for a given segment
+    def extract_mfcc(y, sr, start, end, n_mfcc=13):
+        # Extract the segment
+        start_sample = int(start * sr)
+        end_sample = int(end * sr)
+        segment = y[start_sample:end_sample]
+        # Compute MFCCs
+        mfccs = librosa.feature.mfcc(y=segment, sr=sr, n_mfcc=n_mfcc)
+        return mfccs
+
+    # Initialize a list to hold the MFCCs for each segment
+    all_mfccs = []
+
+    # Extract MFCCs for each speech segment
+    for segment in segments:
+        start_time = segment['start']
+        end_time = segment['end']
+        mfccs = extract_mfcc(y, sr, start_time, end_time)
+        all_mfccs.append(mfccs)
+
+    def pad_or_truncate_mfccs(mfccs_list, max_length):
+        padded_mfccs = []
+        for mfcc in mfccs_list:
+            if mfcc.shape[1] > max_length:
+                # Truncate to max_length
+                mfcc = mfcc[:, :max_length]
+            else:
+                # Pad to max_length
+                mfcc = np.pad(mfcc, ((0, 0), (0, max_length - mfcc.shape[1])), mode='constant')
+            padded_mfccs.append(mfcc)
+        return np.array(padded_mfccs)
+    
+    # Define a maximum length for padding/truncating
+    max_length = 100
+
+    # Pad or truncate MFCCs to a fixed length
+    padded_mfccs = pad_or_truncate_mfccs(all_mfccs, max_length)
+
+    # Normalize padded MFCCs
+    scaler = StandardScaler()
+    normalized_mfccs = scaler.fit_transform(padded_mfccs.reshape(-1, padded_mfccs.shape[-1])).reshape(padded_mfccs.shape)
+    return normalized_mfccs
