@@ -18,12 +18,14 @@ import librosa
 from sklearn.preprocessing import StandardScaler
             
 
-def load_audio(language,provided_text,audio_path):
+
+def load_audio(language, provided_text, audio_path):
     try:
         speech_rate = 0
         pause_rate = 0
         pronunciation_accuracy = 0
         real_and_transcribed_words_ipa = []
+        mfcc_features = None
         
         audio_data = audio_path['array']
         sample_rate = audio_path['sampling_rate']
@@ -40,40 +42,35 @@ def load_audio(language,provided_text,audio_path):
 
         match language:
             case "zh":
-                model = "avintech/whisper-small-chinese"
+                model = whispert.load_model("avintech/whisper-small-chinese", device="cuda")
             case "ms":
-                model = "avintech/whisper-small-malay"
+                model = whispert.load_model("avintech/whisper-small-malay", device="cuda")
             case "ta":
-                model = "avintech/whisper-small-tamil"
+                model = whispert.load_model("avintech/whisper-small-tamil", device="cuda")
             case _:
                 model = whispert.load_model("base")
+
         result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True)
         recorded_audio_text = result["text"]
         words_list = []
         pause_list = []
         for segment in result["segments"]:
-            for words in segment["words"]:
-                if words['text'] != "[*]":  
-                    #get recognised words
-                    words_list.append(words)
+            for word in segment["words"]:
+                if word['text'] != "[*]":  
+                    words_list.append(word)
                 else:
-                    #get pauses
-                    pause_list.append(words)
-        #compute pronunciation accuracy
-        real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices = matchWords(language,provided_text, recorded_audio_text)
-        pronunciation_accuracy, current_words_pronunciation_accuracy = getPronunciationAccuracy(real_and_transcribed_words_ipa)
+                    pause_list.append(word)
 
-        #compute speech rate
+        real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices = matchWords(language, provided_text, recorded_audio_text)
+        pronunciation_accuracy, current_words_pronunciation_accuracy = getPronunciationAccuracy(real_and_transcribed_words_ipa)
         total_duration = result["segments"][-1]["end"]
         speech_rate = calculate_speech_rate(words_list, total_duration)
-
-        #compute pause rate
-        pause_rate = get_pause_rate(pause_list,total_duration)
-
-        #compute MFCC
-        mfcc = get_mfcc(audio_data, sample_rate,result['segments'])
+        pause_rate = get_pause_rate(pause_list, total_duration)
+        mfcc = get_mfcc(audio_data, sample_rate, result['segments'])
+        #mfcc = np.mean(librosa.feature.mfcc(y=audio_data, sr=sample_rate, n_mfcc=20).T, axis=0)
+        print(type(mfcc))
     except Exception as ex:
-        print(ex)
+        print(f"Error in load_audio function: {ex}")
     
     finally:
         data = {
@@ -84,9 +81,9 @@ def load_audio(language,provided_text,audio_path):
             'pronunciation_accuracy': pronunciation_accuracy,
             'real_and_transcribed_words_ipa': real_and_transcribed_words_ipa,
             'mfcc': mfcc,
-            #'mean_pitch': mean_pitch,
-            #'pitch_range': pitch_range,
-            #'std_pitch': std_pitch,
+            # 'mean_pitch': mean_pitch,
+            # 'pitch_range': pitch_range,
+            # 'std_pitch': std_pitch,
         }
         return data
 
@@ -177,45 +174,42 @@ def get_pitch(audio_path):
 
 def get_mfcc(y, sr, segments):
     
-    # Function to extract MFCC features for a given segment
     def extract_mfcc(y, sr, start, end, n_mfcc=13):
-        # Extract the segment
         start_sample = int(start * sr)
         end_sample = int(end * sr)
         segment = y[start_sample:end_sample]
-        # Compute MFCCs
         mfccs = librosa.feature.mfcc(y=segment, sr=sr, n_mfcc=n_mfcc)
         return mfccs
-
-    # Initialize a list to hold the MFCCs for each segment
-    all_mfccs = []
-
-    # Extract MFCCs for each speech segment
-    for segment in segments:
-        start_time = segment['start']
-        end_time = segment['end']
-        mfccs = extract_mfcc(y, sr, start_time, end_time)
-        all_mfccs.append(mfccs)
 
     def pad_or_truncate_mfccs(mfccs_list, max_length):
         padded_mfccs = []
         for mfcc in mfccs_list:
             if mfcc.shape[1] > max_length:
-                # Truncate to max_length
                 mfcc = mfcc[:, :max_length]
             else:
-                # Pad to max_length
                 mfcc = np.pad(mfcc, ((0, 0), (0, max_length - mfcc.shape[1])), mode='constant')
             padded_mfccs.append(mfcc)
         return np.array(padded_mfccs)
     
-    # Define a maximum length for padding/truncating
-    max_length = 100
+    try:
+        all_mfccs = []
+        for segment in segments:
+            start_time = segment['start']
+            end_time = segment['end']
+            mfccs = extract_mfcc(y, sr, start_time, end_time)
+            all_mfccs.append(mfccs)
+        
+        max_length = 100
+        padded_mfccs = pad_or_truncate_mfccs(all_mfccs, max_length)
+        print(f"Padded MFCCs shape: {padded_mfccs.shape}")
 
-    # Pad or truncate MFCCs to a fixed length
-    padded_mfccs = pad_or_truncate_mfccs(all_mfccs, max_length)
+        scaler = StandardScaler()
+        normalized_mfccs = scaler.fit_transform(padded_mfccs.reshape(-1, padded_mfccs.shape[-1])).reshape(padded_mfccs.shape)
 
-    # Normalize padded MFCCs
-    scaler = StandardScaler()
-    normalized_mfccs = scaler.fit_transform(padded_mfccs.reshape(-1, padded_mfccs.shape[-1])).reshape(padded_mfccs.shape)
+        print(normalized_mfccs.dtype)
+        print(f"Normalized MFCCs shape: {normalized_mfccs.shape}")
+    except Exception as ex:
+        print(f"Error in get_mfcc function: {ex}")
+        normalized_mfccs = None
+
     return normalized_mfccs
