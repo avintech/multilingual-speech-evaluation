@@ -3,7 +3,7 @@ import joblib
 from modules.prepare_data import load_audio
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from datasets import load_dataset
+from datasets import load_dataset,concatenate_datasets
 
 # Set the environment variable
 os.environ['HF_TOKEN'] = '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'
@@ -25,6 +25,8 @@ def pre_process(language):
                 whisper_lang = "ta"
                 
         common_voice = load_dataset(dataset_path, split="train", use_auth_token=True)
+        common_voice2 = load_dataset(dataset_path, split="test", use_auth_token=True)
+        common_voice = concatenate_datasets([common_voice,common_voice2])
         
         # Initialize DataFrame
         df = pd.DataFrame(common_voice)

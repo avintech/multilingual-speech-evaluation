@@ -66,8 +66,8 @@ def load_audio(language, provided_text, audio_path):
         total_duration = result["segments"][-1]["end"]
         speech_rate = calculate_speech_rate(words_list, total_duration)
         pause_rate = get_pause_rate(pause_list, total_duration)
-        mfcc = get_mfcc(audio_data, sample_rate, result['segments'])
-        #mfcc = np.mean(librosa.feature.mfcc(y=audio_data, sr=sample_rate, n_mfcc=20).T, axis=0)
+        #mfcc = get_mfcc(audio_data, sample_rate, result['segments'])
+        mfcc = np.mean(librosa.feature.mfcc(y=audio_data, sr=sample_rate, n_mfcc=20).T, axis=0)
         print(type(mfcc))
     except Exception as ex:
         print(f"Error in load_audio function: {ex}")
