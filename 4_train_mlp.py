@@ -9,6 +9,7 @@ from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report
 
 # Fix random seed number
 def train(language):
@@ -104,6 +105,14 @@ def train(language):
     X_test_df.to_pickle('data/pickles/'+language+'_X_test.pkl')
     y_train_df.to_pickle('data/pickles/'+language+'_y_train.pkl')
     y_test_df.to_pickle('data/pickles/'+language+'_y_test.pkl')
+
+    # Evaluate precision, recall, and f1-score
+    y_pred = model.predict(X_test)
+    y_pred_classes = np.argmax(y_pred, axis=1)
+    y_test_classes = np.argmax(y_test, axis=1)
+
+    report = classification_report(y_test_classes, y_pred_classes)
+    print(report)
 
 if __name__ == "__main__":
     train("malay")

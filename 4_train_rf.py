@@ -3,6 +3,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV,train_test_split
 from joblib import dump
 import numpy as np
+from sklearn.metrics import classification_report
 
 def train(language):
     #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0, stratify=y)
@@ -33,7 +34,7 @@ def train(language):
 
     #Random Forest Classifier
     try:
-        rf = RandomForestClassifier(n_estimators=50, oob_score=True, random_state=0)
+        rf = RandomForestClassifier( random_state=0)
         param_grid = {
             'n_estimators': [100, 200, 300],
             'max_depth': [4, 6, 8]
@@ -44,6 +45,14 @@ def train(language):
         rf_grid_search = rf_grid_search.best_estimator_
         dump(rf_grid_search, 'models/random_forest_model_'+language+'.joblib')
         print("Random Forest Model "+language+" Saved")
+
+        # Evaluate precision, recall, and f1-score
+        y_pred = rf_grid_search.predict(X_test)
+        y_pred_classes = np.argmax(y_pred, axis=1)
+        y_test_classes = np.argmax(y_test, axis=1)
+
+        report = classification_report(y_test_classes, y_pred_classes)
+        print(report)
     except Exception as ex:
         print(ex)
 
