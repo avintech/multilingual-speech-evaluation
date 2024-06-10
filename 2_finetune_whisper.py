@@ -49,9 +49,9 @@ def finetune(language):
         common_voice["train"] = load_dataset(dataset_path, split="train", use_auth_token=True)
         common_voice["test"] = load_dataset(dataset_path, split="test", use_auth_token=True)
         common_voice = common_voice.remove_columns(["file_names", "original_script", "fluency"])
-        feature_extractor = WhisperFeatureExtractor.from_pretrained("openai/whisper-small")
-        tokenizer = WhisperTokenizer.from_pretrained("openai/whisper-small", language=language, task="transcribe")
-        processor = WhisperProcessor.from_pretrained("openai/whisper-small", language=language, task="transcribe")
+        feature_extractor = WhisperFeatureExtractor.from_pretrained("openai/whisper-medium")
+        tokenizer = WhisperTokenizer.from_pretrained("openai/whisper-medium", language=language, task="transcribe")
+        processor = WhisperProcessor.from_pretrained("openai/whisper-medium", language=language, task="transcribe")
         common_voice = common_voice.cast_column("audio_path", Audio(sampling_rate=16000))
 
         def prepare_dataset(batch):
@@ -64,7 +64,7 @@ def finetune(language):
             return batch
 
         common_voice = common_voice.map(prepare_dataset, remove_columns=common_voice.column_names["train"], num_proc=2)
-        model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
+        model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-medium")
         model.generation_config.language = language
         model.generation_config.task = "transcribe"
         model.generation_config.forced_decoder_ids = None
@@ -92,7 +92,7 @@ def finetune(language):
             return {"wer": wer}
 
         training_args = Seq2SeqTrainingArguments(
-            output_dir="./whisper-small-"+language,  # change to a repo name of your choice
+            output_dir="./whisper-medium-"+language,  # change to a repo name of your choice
             per_device_train_batch_size=16,
             gradient_accumulation_steps=1,  # increase by 2x for every 2x decrease in batch size
             learning_rate=1e-5,
@@ -129,8 +129,8 @@ def finetune(language):
         kwargs = {
             "dataset_tags": dataset_path,
             "dataset": dataset_path,  # a 'pretty' name for the training dataset
-            "model_name": "Whisper Small " + language + " - Avin Tech",  # a 'pretty' name for our model
-            "finetuned_from": "openai/whisper-small",
+            "model_name": "Whisper medium " + language + " - Avin Tech",  # a 'pretty' name for our model
+            "finetuned_from": "openai/whisper-medium",
             "tasks": "automatic-speech-recognition",
         }
         trainer.push_to_hub(**kwargs)
@@ -139,4 +139,6 @@ def finetune(language):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
 
-finetune("chinese")
+if __name__ == "__main__":
+    #finetune("chinese")
+    finetune("tamil")

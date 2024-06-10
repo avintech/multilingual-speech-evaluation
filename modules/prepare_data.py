@@ -16,7 +16,8 @@ import torchaudio
 import epitran
 import librosa
 from sklearn.preprocessing import StandardScaler
-            
+import jiwer
+from evaluate import load
 
 
 def load_audio(language, provided_text, audio_path):
@@ -42,11 +43,11 @@ def load_audio(language, provided_text, audio_path):
 
         match language:
             case "zh":
-                model = whispert.load_model("avintech/whisper-small-chinese", device="cuda")
+                model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
             case "ms":
-                model = whispert.load_model("avintech/whisper-small-malay", device="cuda")
+                model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
             case "ta":
-                model = whispert.load_model("avintech/whisper-small-tamil", device="cuda")
+                model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
             case _:
                 model = whispert.load_model("base")
 
@@ -69,6 +70,7 @@ def load_audio(language, provided_text, audio_path):
         #mfcc = get_mfcc(audio_data, sample_rate, result['segments'])
         mfcc = np.mean(librosa.feature.mfcc(y=audio_data, sr=sample_rate, n_mfcc=20).T, axis=0)
         print(type(mfcc))
+        
     except Exception as ex:
         print(f"Error in load_audio function: {ex}")
     
@@ -81,6 +83,7 @@ def load_audio(language, provided_text, audio_path):
             'pronunciation_accuracy': pronunciation_accuracy,
             'real_and_transcribed_words_ipa': real_and_transcribed_words_ipa,
             'mfcc': mfcc,
+            'transcript': recorded_audio_text,
             # 'mean_pitch': mean_pitch,
             # 'pitch_range': pitch_range,
             # 'std_pitch': std_pitch,

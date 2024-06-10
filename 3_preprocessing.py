@@ -4,7 +4,7 @@ from modules.prepare_data import load_audio
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from datasets import load_dataset,concatenate_datasets
-
+import jiwer
 # Set the environment variable
 os.environ['HF_TOKEN'] = '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'
 
@@ -46,11 +46,28 @@ def pre_process(language):
                 print(type(data['mfcc']))
                 print(len(data['mfcc']))
 
+                transformation = jiwer.Compose([
+                    jiwer.RemovePunctuation(),
+                    jiwer.ToLowerCase(),
+                    jiwer.RemoveWhiteSpace(replace_by_space=True),
+                    jiwer.RemoveMultipleSpaces(),
+                    jiwer.ReduceToListOfListOfWords()
+                ])
+                
+                trans_provided = transformation(df.iloc[index]['spoken_text'])[0]
+                trans_hypothesis = transformation(data['transcript'])[0]
+                print(trans_provided)
+                print(trans_hypothesis)
+
+                wer = jiwer.wer(trans_provided,trans_hypothesis)
+                print(f"WER: {wer}")
+
                 # Assign features to DataFrame
                 df.at[index, 'pronunciation_accuracy'] = data['pronunciation_accuracy']
                 df.at[index, 'speech_rate'] = data['speech_rate']
                 df.at[index, 'pause_rate'] = data['pause_rate']
                 df.at[index, 'mfcc'] = data['mfcc']
+                df.at[index, 'wer'] = wer
                 # df.at[index, 'mean_pitch'] = data['mean_pitch']
                 # df.at[index, 'pitch_range'] = data['pitch_range']
                 # df.at[index, 'std_pitch'] = data['std_pitch']
@@ -83,4 +100,4 @@ def pre_process(language):
 
 
 if __name__ == "__main__":
-    pre_process("tamil")
+    pre_process("chinese")
