@@ -1,62 +1,111 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV,train_test_split
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from imblearn.over_sampling import SMOTE
 from joblib import dump
+from sklearn.metrics import classification_report, roc_auc_score
 import numpy as np
-from sklearn.metrics import classification_report
 
 def train(language):
-    #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0, stratify=y)
+    X_train = pd.read_pickle(f'data/pickles/{language}_X_train.pkl')
+    X_test = pd.read_pickle(f'data/pickles/{language}_X_test.pkl')
+    y_train = pd.read_pickle(f'data/pickles/{language}_y_train.pkl')
+    y_test = pd.read_pickle(f'data/pickles/{language}_y_test.pkl')
 
-    X_train = pd.read_pickle('data/pickles/'+language+'_X_train.pkl')
-    X_test = pd.read_pickle('data/pickles/'+language+'_X_test.pkl')
-    y_train = pd.read_pickle('data/pickles/'+language+'_y_train.pkl')
-    y_test = pd.read_pickle('data/pickles/'+language+'_y_test.pkl')
+    # Convert y_train and y_test to 1-dimensional arrays if they are one-hot encoded
+    if isinstance(y_train, pd.DataFrame):
+        y_train = y_train.idxmax(axis=1).values
+    if isinstance(y_test, pd.DataFrame):
+        y_test = y_test.idxmax(axis=1).values
 
-    # #XGBoost
-    # try:
-    #     xgb_clf = xgb.XGBClassifier(objective='multi:softprob', num_class=4, seed=42)
-    #     param_grid = {
-    #         'n_estimators': [100, 200, 300],
-    #         'learning_rate': [0.01, 0.1, 0.2, 0.0001],
-    #         'max_depth': [4, 6, 8],
-    #         'colsample_bytree': [0.3, 0.7, 1.0],
-    #         'subsample': [0.6, 0.8, 1.0]
-    #     }
+    # Resample the training data
+    smote = SMOTE(random_state=42)
+    X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 
-    #     xg_grid_search = GridSearchCV(estimator=xgb_clf, param_grid=param_grid, cv=3, scoring='accuracy', verbose=2, n_jobs=-1)
-    #     xg_grid_search.fit(X_train, y_train)
-    #     xg_grid_search_model = xg_grid_search.best_estimator_
-    #     dump(xg_grid_search_model, 'models/xgboost_model_'+language+'.joblib')
-    #     print("XGBoost Model Saved")
-    # except Exception as ex:
-    #     print(ex)
+    param_grid = {
+        'n_estimators': [100, 200, 300, 400, 500],
+        'max_depth': [None, 10, 20, 30, 40, 50],
+        'min_samples_split': [2, 5, 10, 15],
+        'min_samples_leaf': [1, 2, 4, 6],
+        'max_features': [None, 'sqrt', 'log2']
+    }
 
-    #Random Forest Classifier
-    try:
-        rf = RandomForestClassifier( random_state=0)
-        param_grid = {
-            'n_estimators': [100, 200, 300],
-            'max_depth': [4, 6, 8]
-        }
+    # Perform grid search with stratified cross-validation
+    skf = StratifiedKFold(n_splits=5)
+    rf_grid_search = GridSearchCV(RandomForestClassifier(class_weight='balanced'), 
+                                  param_grid, cv=skf, scoring='accuracy')
+    
+    rf_grid_search.fit(X_train_res, y_train_res)
+    best_rf = rf_grid_search.best_estimator_
+    dump(best_rf, f'models/random_forest_model_{language}.joblib')
+    print(f"Random Forest Model {language} Saved")
 
-        rf_grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=3, scoring='accuracy', verbose=2, n_jobs=-1)
-        rf_grid_search.fit(X_train, y_train)
-        rf_grid_search = rf_grid_search.best_estimator_
-        dump(rf_grid_search, 'models/random_forest_model_'+language+'.joblib')
-        print("Random Forest Model "+language+" Saved")
+    # Evaluate precision, recall, and f1-score
+    y_pred = best_rf.predict(X_test)
+    
+    report = classification_report(y_test, y_pred)
+    print(report)
 
-        # Evaluate precision, recall, and f1-score
-        y_pred = rf_grid_search.predict(X_test)
-        y_pred_classes = np.argmax(y_pred, axis=1)
-        y_test_classes = np.argmax(y_test, axis=1)
-
-        report = classification_report(y_test_classes, y_pred_classes)
-        print(report)
-    except Exception as ex:
-        print(ex)
+    # Calculate and print ROC-AUC score if there are only two classes
+    if len(np.unique(y_test)) == 2:
+        roc_auc = roc_auc_score(y_test, y_pred)
+        print("ROC-AUC Score:", roc_auc)
 
 if __name__ == "__main__":
-    train("malay") #doesnt work
-    train("chinese")
     train("tamil")
+
+
+# import pandas as pd
+# from sklearn.ensemble import RandomForestClassifier
+# from sklearn.model_selection import GridSearchCV, StratifiedKFold
+# from imblearn.over_sampling import SMOTE
+# from joblib import dump
+# from sklearn.metrics import classification_report, roc_auc_score
+# import numpy as np
+
+# def train(language):
+#     X_train = pd.read_pickle(f'data/pickles/{language}_X_train.pkl')
+#     X_test = pd.read_pickle(f'data/pickles/{language}_X_test.pkl')
+#     y_train = pd.read_pickle(f'data/pickles/{language}_y_train.pkl')
+#     y_test = pd.read_pickle(f'data/pickles/{language}_y_test.pkl')
+
+#     # Convert y_train and y_test to 1-dimensional arrays if they are one-hot encoded
+#     if isinstance(y_train, pd.DataFrame):
+#         y_train = y_train.idxmax(axis=1).values
+#     if isinstance(y_test, pd.DataFrame):
+#         y_test = y_test.idxmax(axis=1).values
+
+#     # Resample the training data
+#     smote = SMOTE(random_state=42)
+#     X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+
+#     param_grid = {
+#         'n_estimators': [100, 200, 300],
+#         'max_depth': [None, 10, 20, 30],
+#         'min_samples_split': [2, 5, 10],
+#         'min_samples_leaf': [1, 2, 4],
+#     }
+
+#     # Perform grid search with stratified cross-validation
+#     skf = StratifiedKFold(n_splits=5)
+#     rf_grid_search = GridSearchCV(RandomForestClassifier(class_weight='balanced'), 
+#                                   param_grid, cv=skf, scoring='accuracy')
+    
+#     rf_grid_search.fit(X_train_res, y_train_res)
+#     best_rf = rf_grid_search.best_estimator_
+#     dump(best_rf, f'models/random_forest_model_{language}.joblib')
+#     print(f"Random Forest Model {language} Saved")
+
+#     # Evaluate precision, recall, and f1-score
+#     y_pred = best_rf.predict(X_test)
+    
+#     report = classification_report(y_test, y_pred)
+#     print(report)
+
+#     # Calculate and print ROC-AUC score if there are only two classes
+#     if len(np.unique(y_test)) == 2:
+#         roc_auc = roc_auc_score(y_test, y_pred)
+#         print("ROC-AUC Score:", roc_auc)
+
+# if __name__ == "__main__":
+#     train("tamil")
