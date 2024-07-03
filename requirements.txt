@@ -14,7 +14,7 @@ scikit-learn
 xgboost
 ffmpeg-python
 pydub
-
+dragonmapper
 keras==3.1.1
 librosa==0.10.1
 jieba==0.42.1
