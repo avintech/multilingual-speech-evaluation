@@ -20,7 +20,7 @@ import jiwer
 from evaluate import load
 
 
-def load_audio(language, provided_text, audio_path):
+def load_audio(task, language, provided_text, audio_path):
     try:
         speech_rate = 0
         pause_rate = 0
@@ -62,13 +62,21 @@ def load_audio(language, provided_text, audio_path):
                 else:
                     pause_list.append(word)
 
-        real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices = matchWords(language, provided_text, recorded_audio_text)
-        pronunciation_accuracy, current_words_pronunciation_accuracy = getPronunciationAccuracy(real_and_transcribed_words_ipa)
+        if task == 1:
+            pronunciation_accuracy = 100
+            real_and_transcribed_words = ""
+            real_and_transcribed_words_ipa = ""
+        else:
+            real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices = matchWords(language, provided_text, recorded_audio_text)
+            pronunciation_accuracy, current_words_pronunciation_accuracy = getPronunciationAccuracy(real_and_transcribed_words_ipa)
+        
         total_duration = result["segments"][-1]["end"]
         speech_rate = calculate_speech_rate(words_list, total_duration)
         pause_rate = get_pause_rate(pause_list, total_duration)
         #mfcc = get_mfcc(audio_data, sample_rate, result['segments'])
+        print("mfcc")
         mfcc = np.mean(librosa.feature.mfcc(y=audio_data, sr=sample_rate, n_mfcc=20).T, axis=0)
+        print("mfcc")
         print(type(mfcc))
         
     except Exception as ex:
@@ -108,10 +116,14 @@ def matchWords(language,provided_text, recorded_transcript):
         phonem_representation = phonem_representation.replace('*','')
         return phonem_representation
     
-    words_estimated = recorded_transcript.split()
-    print(words_estimated)
-    words_real = provided_text.split()
-
+    if language == "ms":
+        words_estimated = recorded_transcript.split()
+        words_real = provided_text.split()
+    else:
+        # Using a list comprehension
+        words_estimated = [char for char in recorded_transcript if char != ' ']
+        words_real = [char for char in provided_text if char != ' ']
+        
     mapped_words, mapped_words_indices = get_best_mapped_words(
         words_estimated, words_real)
 
