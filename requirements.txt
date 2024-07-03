@@ -20,6 +20,7 @@ jieba==0.42.1
 sentence-transformers==3.0.1
 gpt4all==2.7.0
 jamo
+g2pK
 dragonmapper==0.2.6
 torch==2.2.1
 torchaudio==2.2.1
