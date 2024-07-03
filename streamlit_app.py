@@ -14,6 +14,7 @@ import jieba
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 from gpt4all import GPT4All
+import re
 
 
 # Page configuration
@@ -217,14 +218,14 @@ def picture_callback():
             provided_text = ""
             data = prepare_data.load_audio(1,model_lang,provided_text,audio_data)
 
+            #use previous scaler to scale the new prediction to fit into the model
+            data = pd.DataFrame([data])
 
             transcript = data['transcript'][0]
             print(transcript)
             st.markdown("### What you said:")
             st.markdown(transcript, unsafe_allow_html=True)
 
-            #use previous scaler to scale the new prediction to fit into the model
-            data = pd.DataFrame([data])
             data['mfcc'] = data['mfcc'].apply(lambda x: x.flatten())
             mfcc_length = data['mfcc'].apply(len).max()
             data['mfcc'] = data['mfcc'].apply(lambda x: np.pad(x, (0, mfcc_length - len(x)), mode='constant'))
@@ -326,7 +327,7 @@ def picture_callback():
             similarity = cosine_similarity([embedding1], [embedding2])[0][0]
             similarity_score = similarity * 100
             print(f"Semantic Similarity Score: {similarity_score:.2f}")
-            
+
             #5W1H
             model = GPT4All("mistral-7b-instruct-v0.1.Q4_0.gguf")
             prompt = (
@@ -371,6 +372,20 @@ def picture_callback():
             st.markdown(eval_html, unsafe_allow_html=True)
             print(f"5W1H Score: {whscore}")
 
+            #Grammar
+            grammar_prompt = (
+                transcript + "Based on the sentence, evaluate the grammar by giving a score out of 100"
+            )
+
+            # Generate response with specific parameters for consistency
+            #temp=0 reduce randomness
+            grammar_output = model.generate(grammar_prompt, temp=0)
+            print(grammar_output)
+            score_match = re.search(r"\d+", grammar_output)
+            if score_match:
+                grammar_score = int(score_match.group())
+                print(f"Score: {grammar_score}")
+
             data = {
                 "Metric": [
                     "Vocabulary Richness",
@@ -383,7 +398,7 @@ def picture_callback():
                     f"{vocabulary_richness_percentage:.2f}",
                     f"{whscore:.2f}",
                     f"{similarity_score:.2f}",
-                    "",
+                    f"{grammar_score:.2f}",
                     f"{y_pred_class[0]:.2f}"
                 ]
             }
