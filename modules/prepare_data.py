@@ -41,15 +41,25 @@ def load_audio(task, language, provided_text, audio_path):
 
         audio_np = whispert.pad_or_trim(audio_np)
 
-        match language:
-            case "zh":
-                model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
-            case "ms":
-                model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
-            case "ta":
-                model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
-            case _:
-                model = whispert.load_model("base")
+        # match language:
+        #     case "zh":
+        #         model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
+        #     case "ms":
+        #         model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
+        #     case "ta":
+        #         model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
+        #     case _:
+        #         model = whispert.load_model("base")
+
+        if language == "zh":
+            model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
+        elif language == "ms":
+            model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
+        elif language == "ta":
+            model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
+        else:
+            model = whispert.load_model("base")
+
 
         result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True)
         recorded_audio_text = result["text"]
@@ -101,18 +111,31 @@ def load_audio(task, language, provided_text, audio_path):
 def matchWords(language,provided_text, recorded_transcript):
     #recorded_transcript = recorded_transcript.replace(" ","")
     def convertToPhonem(language: str ,sentence: str) -> str:
-        match language:
-            case "zh":
-                phonem_representation = dragonmapper.hanzi.to_pinyin(sentence)
-                phonem_representation = dragonmapper.transcriptions.pinyin_to_ipa(phonem_representation)
-            case "ms":
-                epi = epitran.Epitran('msa-Latn')  # Replace 'lang_code' with the ISO language code of the language you're interested in
-                phonem_representation = epi.transliterate(sentence)
-            case "ta":
-                epi = epitran.Epitran('tam-Taml')
-                phonem_representation = epi.transliterate(sentence)
-            case _:
-                phonem_representation = eng_to_ipa.convert(sentence)   
+        # match language:
+        #     case "zh":
+        #         phonem_representation = dragonmapper.hanzi.to_pinyin(sentence)
+        #         phonem_representation = dragonmapper.transcriptions.pinyin_to_ipa(phonem_representation)
+        #     case "ms":
+        #         epi = epitran.Epitran('msa-Latn')  # Replace 'lang_code' with the ISO language code of the language you're interested in
+        #         phonem_representation = epi.transliterate(sentence)
+        #     case "ta":
+        #         epi = epitran.Epitran('tam-Taml')
+        #         phonem_representation = epi.transliterate(sentence)
+        #     case _:
+        #         phonem_representation = eng_to_ipa.convert(sentence)   
+
+        if language == "zh":
+            phonem_representation = dragonmapper.hanzi.to_pinyin(sentence)
+            phonem_representation = dragonmapper.transcriptions.pinyin_to_ipa(phonem_representation)
+        elif language == "ms":
+            epi = epitran.Epitran('msa-Latn')  # Replace 'lang_code' with the ISO language code of the language you're interested in
+            phonem_representation = epi.transliterate(sentence)
+        elif language == "ta":
+            epi = epitran.Epitran('tam-Taml')
+            phonem_representation = epi.transliterate(sentence)
+        else:
+            phonem_representation = eng_to_ipa.convert(sentence)
+
         phonem_representation = phonem_representation.replace('*','')
         return phonem_representation
     
