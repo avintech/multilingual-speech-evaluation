@@ -17,7 +17,6 @@ import epitran
 import librosa
 from sklearn.preprocessing import StandardScaler
 import jiwer
-from evaluate import load
 
 
 def load_audio(task, language, provided_text, audio_path):
