@@ -1,22 +1,22 @@
 import pkg_resources
 
 libraries = [
-    'joblib',
-    'pandas',
-    'sklearn',
-    'streamlit',
-    'streamlit-mic-recorder',
-    'keras',
+    'eng-to-ipa',
     'numpy',
+    'parselmouth',
+    'scipy',
+    'whisper-timestamped',
+    'dragonmapper',
+    'torch',
+    'torchaudio',
+    'epitran',
     'librosa',
-    'jieba',
-    'sentence-transformers',
-    'gpt4all'
+    'sklearn',
+    'jiwer'
 ]
-
 for library in libraries:
     try:
-        version = pkg_resources.get_distribution(library).version
+        version = pkg_resources.get_distribution(library.replace('-', '_')).version
         print(f"{library}=={version}")
     except pkg_resources.DistributionNotFound:
         print(f"{library} not found")

@@ -14,9 +14,14 @@ scikit-learn
 xgboost
 ffmpeg-python
 pydub
-dragonmapper
 keras==3.1.1
 librosa==0.10.1
 jieba==0.42.1
 sentence-transformers==3.0.1
 gpt4all==2.7.0
+
+dragonmapper==0.2.6
+torch==2.2.1
+torchaudio==2.2.1
+epitran==1.25
+jiwer==3.0.4
