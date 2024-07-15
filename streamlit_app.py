@@ -152,19 +152,6 @@ def reading_callback():
                 return actual_text, spoken_text, comparison_text
 
             # Generate the texts
-            actual_text, spoken_text, comparison_text = generate_comparison_paragraph(real_and_transcribed_words_ipa)
-
-            # Display the paragraphs in Streamlit
-            st.markdown("### Actual Phoneme")
-            st.markdown(actual_text, unsafe_allow_html=True)
-
-            st.markdown("### Spoken Phoneme")
-            st.markdown(spoken_text, unsafe_allow_html=True)
-
-            st.markdown("### Comparison of Phonemes (with underlines for mismatches)")
-            st.markdown(comparison_text, unsafe_allow_html=True)
-
-            # Generate the texts
             actual_text, spoken_text, comparison_text = generate_comparison_paragraph(real_and_transcribed_words)
 
             # Display the paragraphs in Streamlit

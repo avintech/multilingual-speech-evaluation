@@ -2,7 +2,7 @@ import eng_to_ipa
 import numpy as np
 import parselmouth
 import scipy.signal
-from string import punctuation
+import string
 import whisper_timestamped as whispert
 
 from modules.WordMatching import get_best_mapped_words
@@ -17,6 +17,8 @@ import epitran
 import librosa
 from sklearn.preprocessing import StandardScaler
 import jiwer
+import re
+import jieba
 
 
 def load_audio(task, language, provided_text, audio_path):
@@ -40,6 +42,9 @@ def load_audio(task, language, provided_text, audio_path):
 
         audio_np = whispert.pad_or_trim(audio_np)
 
+        provided_text = re.sub(r'[^\w\s]', '', provided_text)
+
+
         # match language:
         #     case "zh":
         #         model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
@@ -50,17 +55,17 @@ def load_audio(task, language, provided_text, audio_path):
         #     case _:
         #         model = whispert.load_model("base")
 
-        if language == "zh":
-            model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
-        elif language == "ms":
-            model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
-        elif language == "ta":
-            model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
-        else:
-            model = whispert.load_model("base")
+        # if language == "zh":
+        #     model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
+        # elif language == "ms":
+        #     model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
+        # elif language == "ta":
+        #     model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
+        # else:
+        model = whispert.load_model("base")
 
 
-        result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True)
+        result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True,remove_punctuation_from_words=True)
         recorded_audio_text = result["text"]
         words_list = []
         pause_list = []
@@ -77,7 +82,7 @@ def load_audio(task, language, provided_text, audio_path):
             real_and_transcribed_words_ipa = ""
         else:
             real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices = matchWords(language, provided_text, recorded_audio_text)
-            pronunciation_accuracy, current_words_pronunciation_accuracy = getPronunciationAccuracy(real_and_transcribed_words_ipa)
+            pronunciation_accuracy, current_words_pronunciation_accuracy = getPronunciationAccuracy(language,real_and_transcribed_words_ipa)
         
         total_duration = result["segments"][-1]["end"]
         speech_rate = calculate_speech_rate(words_list, total_duration)
@@ -160,17 +165,18 @@ def matchWords(language,provided_text, recorded_transcript):
                                             convertToPhonem(language, mapped_words[word_idx])))
     return real_and_transcribed_words, real_and_transcribed_words_ipa, mapped_words_indices
 
-def getPronunciationAccuracy(real_and_transcribed_words_ipa) -> float:
-    def removePunctuation(word: str) -> str:
-        return ''.join([char for char in word if char not in punctuation])
-    
+def getPronunciationAccuracy(language,real_and_transcribed_words_ipa) -> float:
+    def removePunctuation(language,word: str) -> str:
+        
+        return ''.join([char for char in word if char not in string.punctuation])
+        
     total_mismatches = 0.
     number_of_phonemes = 0.
     current_words_pronunciation_accuracy = []
     for pair in real_and_transcribed_words_ipa:
-        real_without_punctuation = removePunctuation(pair[0]).lower()
+        real_without_punctuation = removePunctuation(language,pair[0]).lower()
         number_of_word_mismatches = edit_distance_python(
-            real_without_punctuation, removePunctuation(pair[1]).lower())
+            real_without_punctuation, removePunctuation(language,pair[1]).lower())
         total_mismatches += number_of_word_mismatches
         number_of_phonemes_in_word = len(real_without_punctuation)
         number_of_phonemes += number_of_phonemes_in_word
