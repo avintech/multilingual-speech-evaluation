@@ -13073,3 +13073,8 @@ whisper-medium-tamil/checkpoint-4000/scheduler.pt
 whisper-medium-tamil/checkpoint-4000/trainer_state.json
 whisper-medium-tamil/checkpoint-4000/training_args.bin
 whisper-medium-tamil/runs/Jun02_22-56-12_avintech/events.out.tfevents.1717340174.avintech.223736.0
+myfile2.wav
+data/pickles/preprocessed_data_chinese_3.pkl
+data/pickles/preprocessed_data_malay_3.pkl
+data/pickles/preprocessed_data_tamil_3.pkl
+myfile2.wav
