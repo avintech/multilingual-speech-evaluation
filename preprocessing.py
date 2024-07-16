@@ -5,6 +5,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from datasets import load_dataset,concatenate_datasets
 import jiwer
+# Set the environment variable
+
 # Now you can access it using os.environ or pass it to functions that need it
 hf_token = os.environ['HF_TOKEN']
 
@@ -43,16 +45,28 @@ def pre_process(language):
                 print(type(data['mfcc']))
                 print(len(data['mfcc']))
 
-                transformation = jiwer.Compose([
-                        jiwer.RemovePunctuation(),
-                        jiwer.ToLowerCase(),
-                        jiwer.RemoveWhiteSpace(replace_by_space=True),
-                        jiwer.RemoveMultipleSpaces(),
-                        jiwer.ReduceToListOfListOfWords()
-                    ])
+                if language == "chinese":
+                    transformation = jiwer.Compose([
+                            jiwer.RemovePunctuation(),
+                            jiwer.ToLowerCase(),
+                            jiwer.RemoveWhiteSpace(),
+                            jiwer.RemoveMultipleSpaces(),
+                            jiwer.ReduceToListOfListOfWords()
+                        ])
+                    trans_provided = transformation(df.iloc[index]['spoken_text'])[0]
+                    trans_hypothesis = transformation(data['transcript'])[0]
                 
-                trans_provided = transformation(df.iloc[index]['spoken_text'])[0]
-                trans_hypothesis = transformation(data['transcript'])[0]
+                else:
+                    transformation = jiwer.Compose([
+                            jiwer.RemovePunctuation(),
+                            jiwer.ToLowerCase(),
+                            jiwer.RemoveWhiteSpace(),
+                            jiwer.RemoveMultipleSpaces()
+                        ])
+                    trans_provided = transformation(df.iloc[index]['spoken_text'])
+                    trans_hypothesis = transformation(data['transcript'])
+                
+                
                 
                 trans_provided_flat = [item for sublist in trans_provided for item in sublist]
                 trans_hypothesis_flat = [item for sublist in trans_hypothesis for item in sublist]
@@ -73,7 +87,7 @@ def pre_process(language):
                 # Compute WER
                 wer = jiwer.wer(trans_provided_flat, trans_hypothesis_flat)
                 print(f"WER: {wer}")
-
+                
                 # Assign features to DataFrame
                 df.at[index, 'pronunciation_accuracy'] = data['pronunciation_accuracy']
                 df.at[index, 'speech_rate'] = data['speech_rate']
@@ -112,4 +126,4 @@ def pre_process(language):
 
 
 if __name__ == "__main__":
-    pre_process("tamil")
+    pre_process("chinese")

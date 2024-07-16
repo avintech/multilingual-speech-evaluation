@@ -45,15 +45,15 @@ def load_audio(task, language, provided_text, audio_path):
         provided_text = re.sub(r'[^\w\s]', '', provided_text)
 
 
-        # match language:
-        #     case "zh":
-        #         model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
-        #     case "ms":
-        #         model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
-        #     case "ta":
-        #         model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
-        #     case _:
-        #         model = whispert.load_model("base")
+        match language:
+            case "zh":
+                model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
+            case "ms":
+                model = whispert.load_model("avintech/whisper-medium-malay", device="cuda")
+            case "ta":
+                model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
+            case _:
+                model = whispert.load_model("medium", device="cuda")
 
         # if language == "zh":
         #     model = whispert.load_model("avintech/whisper-medium-chinese", device="cuda")
@@ -62,10 +62,12 @@ def load_audio(task, language, provided_text, audio_path):
         # elif language == "ta":
         #     model = whispert.load_model("avintech/whisper-medium-tamil", device="cuda")
         # else:
-        model = whispert.load_model("base")
+        #model = whispert.load_model("medium", device="cuda")
 
-
-        result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True,remove_punctuation_from_words=True)
+        if language == "zh":
+            result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True,remove_punctuation_from_words=True, initial_prompt="以下是普通话的句子，请以简体输出")
+        else:
+            result = whispert.transcribe(model, audio_np, language=language, detect_disfluencies=True,remove_punctuation_from_words=True)
         recorded_audio_text = result["text"]
         words_list = []
         pause_list = []

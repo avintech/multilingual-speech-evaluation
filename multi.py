@@ -7,7 +7,8 @@ def run_pre_process(language):
     pre_process(language)
 
 if __name__ == "__main__":
-    languages = ["malay", "tamil"]
+    #languages = ["chinese"]
+    languages = ["chinese","tamil"]
     
     # Create a pool of processes
     with multiprocessing.Pool() as pool:
