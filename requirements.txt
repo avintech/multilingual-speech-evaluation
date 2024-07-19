@@ -28,3 +28,4 @@ epitran==1.25
 jiwer==3.0.4
 tensorflow==2.16.1
 tf-keras
+io
