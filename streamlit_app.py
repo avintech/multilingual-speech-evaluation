@@ -41,7 +41,7 @@ if selection == "Picture Discussion":
     ("Chinese", "Malay", "Tamil"))
 
     if lang == "Chinese":
-        model = '0'
+        model = '1'
     elif lang == "Malay":
         model = '1'
     elif lang == "Tamil":
@@ -66,7 +66,7 @@ elif selection == "Reading":
 
     if lang == "Chinese":
         provided_text = "小明和朋友们在公园里玩。他们笑啊，跑啊，玩得很开心。太阳下山了，他们回家了。今天真快乐！"
-        model = '0'
+        model = '1'
     elif lang == "Malay":
         provided_text = "Ali dan kawan-kawannya bermain di taman. Mereka ketawa, berlari dan sangat gembira. Matahari terbenam, mereka pulang. Hari ini sangat indah!"
         model = '1'
@@ -145,6 +145,7 @@ def reading_task(file_content = None):
             exit
 
         y_pred = loaded_model.predict(new_data_scaled)
+        print(y_pred)
         y_pred_class = np.argmax(y_pred, axis=1)
 
         print("Fluency Score: " + str(y_pred_class))
